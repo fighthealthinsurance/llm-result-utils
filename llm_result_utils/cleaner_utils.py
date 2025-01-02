@@ -1,6 +1,5 @@
-from typing import Optional
+from typing import Optional, Tuple
 import re
-import requests
 from urllib import request as urllib_request
 import unicodedata
 import json
@@ -35,7 +34,7 @@ class CleanerUtils(object):
             return cls.note_regex.sub("", result)
 
     # Different swaps for different types of responses.
-    swaps = {
+    swaps: dict[str, list[Tuple[str, str]]] = {
         "general": [
             (
                 "Note that the information is inferred based on the reviewer's findings, but the language used is general rather than directly referencing the reviewer's findings.",
@@ -142,8 +141,8 @@ class CleanerUtils(object):
             ("deny the denial", "deny the "),
             ("  ", " "),
             ("As an AI language model", ""),
-            ("\.\.\.", "."),
-            ("\.\.", "."),
+            (r"\.\.\.", "."),
+            (r"\.\.", "."),
             ("by our independent medical representative", "by us"),
             ("is medically necessary", "is not medically necessary"),
             ("Review findings: The", ""),
@@ -173,7 +172,7 @@ class CleanerUtils(object):
             ("< / FREETEXT >", ""),
             ("< / ABSTRACT >", ""),
             ("  ", " "),
-            ("\.\.", "."),
+            (r"\.\.", "."),
             (
                 "trans men have well-developed jawlines",
                 "trans women have well-developed jawlines",
@@ -272,21 +271,20 @@ class CleanerUtils(object):
     @classmethod
     def cleanup_lt(cls, lt: str, data: Optional[str]) -> Optional[str]:
         if data is None:
-            return
+            return None
         # json handled seperately
         if lt == "json":
             return cls.cleanup_json(data)
         # Use the gernal swap and then add any return type specific swaps
-        my_swaps = {}
-        my_swaps = cls.swaps["general"]
+        my_swaps: dict[str, str] = dict(cls.swaps["general"])
         if lt in cls.swaps:
-            my_swaps += cls.swaps[lt]
+            my_swaps.update(cls.swaps[lt])
 
         # Since a swap may result in another swap keep swapping until we stop changing.
         old_data = ""
         while old_data != data:
             old_data = data
-            for o, r in my_swaps:
+            for o, r in my_swaps.items():
                 data = re.sub(o, r, data, flags=re.IGNORECASE)
 
         return data
