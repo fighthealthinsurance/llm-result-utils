@@ -313,6 +313,24 @@ class CleanerUtils(object):
         re.IGNORECASE,
     )
 
+    url_pattern = "https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#?&\\/=]*)"
+    url_re = re.compile(url_pattern, re.IGNORECASE)
+
+    @classmethod
+    def url_fixer(cls, result: Optional[str]) -> Optional[str]:
+        """LLMs like to hallucinate URLs drop them if they are not valid"""
+        if result is None:
+            return None
+
+        urls = cls.url_re.findall(result)
+        for u in urls:
+            print(f"{u}")
+            if not cls.is_valid_url(u):
+                print(f"Removing invalud url {u}")
+                result = result.replace(u, "")
+        return result
+
+
     @classmethod
     def is_valid_url(cls, url):
         try:
