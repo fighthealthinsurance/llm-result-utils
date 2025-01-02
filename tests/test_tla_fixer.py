@@ -1,7 +1,7 @@
-import unittest
+from unittest import TestCase
 from llm_result_utils.cleaner_utils import CleanerUtils
 
-class TestTLA(unittest.TestCase):
+class TestTLA(TestCase):
 
     def test_none(self):
         fixed = CleanerUtils.tla_fixer(None)
