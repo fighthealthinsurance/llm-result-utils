@@ -1,10 +1,11 @@
 from typing import Optional
 import re
 
+
 class LLMResponseUtils(object):
     tla_regex = re.compile("([A-Z])\\w+ ([A-Z])\\w+ ([A-Z])\\w+ \\(([A-Z]{3})\\)")
     note_regex = re.compile(r"\n\s*\**\s*Note.*\Z")
-    
+
     @classmethod
     def tla_fixer(cls, result: Optional[str]) -> Optional[str]:
         """Fix incorrectly picked TLAs from the LLM."""
