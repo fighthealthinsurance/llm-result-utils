@@ -58,7 +58,16 @@ class CleanerUtils(object):
                 "Please note: This letter is a hypothetical response and does not reflect the actual policies or decisions of any specific insurance company. It is intended for informational purposes only and should not be used as a substitute for professional legal or medical advice.",
                 "",
             ),
-            ("a individual", "an individual"),
+            ("Facial Feminization Surgery (FGS)", "Facial Feminization Surgery (FFS)"),
+            ("Facial Feminization Surgery (FMS)", "Facial Feminization Surgery (FFS)"),
+            (
+                "Facial Masculinization Surgery (FFS)",
+                "Facial Masculinization Surgery (FMS)",
+            ),
+            (
+                "Facial Masculinization Surgery (FGS)",
+                "Facial Masculinization Surgery (FMS)",
+            ),
         ],
         "patient_history": [
             (
@@ -133,8 +142,8 @@ class CleanerUtils(object):
             ("deny the denial", "deny the "),
             ("  ", " "),
             ("As an AI language model", ""),
-            (r"\.\.\.", "."),
-            (r"\.\.", "."),
+            ("\.\.\.", "."),
+            ("\.\.", "."),
             ("by our independent medical representative", "by us"),
             ("is medically necessary", "is not medically necessary"),
             ("Review findings: The", ""),
@@ -164,7 +173,7 @@ class CleanerUtils(object):
             ("< / FREETEXT >", ""),
             ("< / ABSTRACT >", ""),
             ("  ", " "),
-            (r"\.\.", "."),
+            ("\.\.", "."),
             (
                 "trans men have well-developed jawlines",
                 "trans women have well-developed jawlines",
@@ -329,7 +338,6 @@ class CleanerUtils(object):
                 print(f"Removing invalud url {u}")
                 result = result.replace(u, "")
         return result
-
 
     @classmethod
     def is_valid_url(cls, url):
