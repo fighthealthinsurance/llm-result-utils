@@ -231,42 +231,36 @@ class CleanerUtils(object):
         and trailing ,s instead. This is kind of janky but YOLO.
         """
 
-        def de_json(l):
-            try:
-                return json.loads(l)
-            except:
-                return re.sub(r"^\s*(.*?)\s*$", "\1", l).rstrip('","').lstrip('"')
+        # Some models get None and null mixed up in their JSON output
+        data = data.replace("None", "null")
+        data = cls.remove_control_characters(data)
 
-            # Some models get None and null mixed up in their JSON output
-            data = data.replace("None", "null")
-            data = remove_control_characters(data)
+        # Try and clean up the endings
+        if data.endswith(","):
+            data = data.rstrip(",")
+        data = data.replace(",}", "}")
 
-            # Try and clean up the endings
-            if data.endswith(","):
-                data = data.rstrip(",")
-            data = data.replace(",}", "}")
+        # Handle some missing quotes if needed.
+        try:
+            return json.loads(data)
+        except:
+            data = cls.fix_missing_quotes(data)
 
-            # Handle some missing quotes if needed.
-            try:
-                return json.loads(data)
-            except:
-                data = fix_missing_quotes(data)
+        try:
+            return json.loads(data)
+        except:
+            pass
+        try:
+            return json.loads(data + "}")
+        except:
+            pass
 
-            try:
-                return json.loads(data)
-            except:
-                pass
-            try:
-                return json.loads(data + "}")
-            except:
-                pass
+        try:
+            return json.loads(data + '"}')
+        except:
+            pass
 
-            try:
-                return json.loads(data + '"}')
-            except:
-                pass
-
-            return None
+        return None
 
     @classmethod
     def cleanup_lt(cls, lt: str, data: Optional[str]) -> Optional[str]:
