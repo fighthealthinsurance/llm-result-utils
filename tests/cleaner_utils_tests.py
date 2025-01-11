@@ -1,6 +1,7 @@
 import unittest
 from cleaner_utils import CleanerUtils
 
+
 class TestCleanerUtils(unittest.TestCase):
     def test_tla_fixer(self):
         result = "Approved for Patient J R T (JRT)"
@@ -11,8 +12,18 @@ class TestCleanerUtils(unittest.TestCase):
         fixed_result = CleanerUtils.tla_fixer(result)
         self.assertEqual(fixed_result, "Approved for Patient J R T (JRT)")
 
+        # Test with no TLA
+        result = "Approved for Patient JRT"
+        fixed_result = CleanerUtils.tla_fixer(result)
+        self.assertEqual(fixed_result, "Approved for Patient JRT")
+
     def test_note_remover(self):
         result = "This is a summary.\n* Note: This is additional information."
+        cleaned_result = CleanerUtils.note_remover(result)
+        self.assertEqual(cleaned_result, "This is a summary.")
+
+        # Test without a note
+        result = "This is a summary."
         cleaned_result = CleanerUtils.note_remover(result)
         self.assertEqual(cleaned_result, "This is a summary.")
 
@@ -20,6 +31,11 @@ class TestCleanerUtils(unittest.TestCase):
         result = "Clean this text\u0000 with control chars."
         cleaned_result = CleanerUtils.remove_control_characters(result)
         self.assertEqual(cleaned_result, "Clean this text with control chars.")
+
+        # Test without control characters
+        result = "Clean text with no control chars."
+        cleaned_result = CleanerUtils.remove_control_characters(result)
+        self.assertEqual(cleaned_result, result)
 
     def test_json_fix_missing_quotes(self):
         result = "{key1: value1, key2: value2}"
@@ -37,13 +53,25 @@ class TestCleanerUtils(unittest.TestCase):
         self.assertEqual(fixed_json, '{"key1": "value1", "key2": "value2"}')
 
     def test_cleanup_json(self):
+        # Test incomplete JSON
         incomplete_json = '{"key1": "value1", "key2": "value2",'
         cleaned_json = CleanerUtils.cleanup_json(incomplete_json)
         self.assertEqual(cleaned_json, {"key1": "value1", "key2": "value2"})
 
+        # Test valid JSON
+        complete_json = '{"key1": "value1", "key2": "value2"}'
+        cleaned_json = CleanerUtils.cleanup_json(complete_json)
+        self.assertEqual(cleaned_json, {"key1": "value1", "key2": "value2"})
+
     def test_cleanup_lt(self):
+        # Test general cleanup
         result = "Note that this is irrelevant information."
         cleaned_result = CleanerUtils.cleanup_lt("general", result)
+        self.assertEqual(cleaned_result, "")
+
+        # Test with type-specific cleanup
+        result = "The diagnosis is Based on this information, it can be inferred that"
+        cleaned_result = CleanerUtils.cleanup_lt("diagnosis", result)
         self.assertEqual(cleaned_result, "")
 
     def test_url_fixer(self):
@@ -54,6 +82,7 @@ class TestCleanerUtils(unittest.TestCase):
     def test_is_valid_url(self):
         self.assertTrue(CleanerUtils.is_valid_url("https://www.google.com"))
         self.assertFalse(CleanerUtils.is_valid_url("https://invalidurl.fake"))
+
 
 if __name__ == "__main__":
     unittest.main()
