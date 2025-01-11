@@ -6,32 +6,32 @@ import json
 
 
 class CleanerUtils(object):
-    """Utils for cleaning up responses."""
+    """Utils for cleaning up responses from large language models."""
 
     tla_regex = re.compile("([A-Z])\\w+ ([A-Z])\\w+ ([A-Z])\\w+ \\(([A-Z]{3})\\)")
     note_regex = re.compile(r"\n\s*\**\s*Note.*\Z")
 
     @classmethod
     def tla_fixer(cls, result: Optional[str]) -> Optional[str]:
-        """Fix incorrectly picked TLAs from the LLM."""
+        """Fix incorrectly identified TLAs (Three Letter Acronyms) in text."""
         if result is None:
             return None
-        else:
-            # Look for three letter acronyms
-            matches = cls.tla_regex.finditer(result)
-            for m in matches:
-                tla = m.group(1) + m.group(2) + m.group(3)
-                if tla != m.group(4):
-                    return re.sub(f"(?<=[\\.\\( ]){m.group(4)}", tla, result)
-            return result
+
+        # Look for three letter acronyms
+        matches = cls.tla_regex.finditer(result)
+        for m in matches:
+            tla = m.group(1) + m.group(2) + m.group(3)
+            if tla != m.group(4):
+                # Swap the bad TLA.
+                result = re.sub(f"(?<=[\\.\\( ]){m.group(4)}", tla, result)
+        return result
 
     @classmethod
     def note_remover(cls, result: Optional[str]) -> Optional[str]:
         """Remove the last line note because we'll put similar content up earlier anyways"""
         if result is None:
             return None
-        else:
-            return cls.note_regex.sub("", result)
+        return cls.note_regex.sub("", result)
 
     # Different swaps for different types of responses.
     swaps: dict[str, list[Tuple[str, str]]] = {
@@ -201,12 +201,14 @@ class CleanerUtils(object):
 
     @classmethod
     def remove_control_characters(cls, s):
+        """Remove control characters from the given string, except for newlines."""
         return "".join(
             ch for ch in s if unicodedata.category(ch)[0] != "C" or ch == "\n"
         )
 
     @classmethod
     def json_fix_missing_quotes(cls, json_string):
+        """Fix missing quotes around JSON keys and unquoted values."""
         # Find all JSON keys without quotes (no spaces allowed in keys)
         pattern_keys = r"([{,])\s*([a-zA-Z_]\w*)\s*:"
         fixed_json = re.sub(pattern_keys, r' \1"\2":', json_string)
@@ -219,6 +221,7 @@ class CleanerUtils(object):
 
     @classmethod
     def json_fix_missing_colons(cls, json_string):
+        """Fix missing colons in JSON strings."""
         # Find all places where a colon is missing between keys and values
         pattern = r'([{,])\s*([a-zA-Z_]\w*)\s+([^",}\]]+)'
         fixed_json = re.sub(pattern, r' \1"\2": \3', json_string)
