@@ -10,7 +10,9 @@ class CleanerUtils(object):
 
     tla_regex = re.compile("([A-Z])\\w+ ([A-Z])\\w+ ([A-Z])\\w+ \\(([A-Z]{3})\\)")
     note_regex = re.compile(r"\n\s*\**\s*Note.*\Z")
-    key_compliance_notes_regex = re.compile(r"\*\*Key Compliance Notes\*\*.*\Z", re.DOTALL)
+    key_compliance_notes_regex = re.compile(
+        r"\*\*Key Compliance Notes\*\*.*\Z", re.DOTALL
+    )
     why_this_works_regex = re.compile(r"### \*\*Why This Works\*\*.*\Z", re.DOTALL)
 
     @classmethod
@@ -57,7 +59,7 @@ class CleanerUtils(object):
         """Reject appeals mentioning '45 CFR §146.136' but not containing 'mental health'"""
         if result is None:
             return None
-        if '45 CFR §146.136' in result and 'mental health' not in result:
+        if "45 CFR §146.136" in result and "mental health" not in result:
             return None
         return result
 
@@ -66,7 +68,7 @@ class CleanerUtils(object):
         """Reject doctor appeals mentioning '45 CFR §146.136' but not containing 'mental health'"""
         if result is None:
             return None
-        if '45 CFR §146.136' in result and 'mental health' not in result:
+        if "45 CFR §146.136" in result and "mental health" not in result:
             return None
         return result
 
