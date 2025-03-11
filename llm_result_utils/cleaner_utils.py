@@ -59,16 +59,12 @@ class CleanerUtils(object):
         """Reject appeals mentioning '45 CFR §146.136' but not containing 'mental health'"""
         if result is None:
             return None
-        if "45 CFR §146.136" in result and "mental health" not in result:
-            return None
-        return result
-
-    @classmethod
-    def reject_doctor_appeals_with_45_cfr(cls, result: Optional[str]) -> Optional[str]:
-        """Reject doctor appeals mentioning '45 CFR §146.136' but not containing 'mental health'"""
-        if result is None:
-            return None
-        if "45 CFR §146.136" in result and "mental health" not in result:
+        if "45 CFR §146.136" in result and (
+            "mental health" not in result
+            and "psychiatry" not in result
+            and "psychology" not in result
+            and "counseling" not in result
+        ):
             return None
         return result
 
@@ -306,9 +302,8 @@ class CleanerUtils(object):
 
     @classmethod
     def cleanup_lt(cls, lt: str, data: Optional[str]) -> Optional[str]:
-        if "appeal" in lt:
+        if "appeal" in lt and "reasoning" not in lt:
             data = cls.reject_appeals_with_45_cfr(data)
-            data = cls.reject_doctor_appeals_with_45_cfr(data)
         if data is None:
             return None
         # json handled seperately
