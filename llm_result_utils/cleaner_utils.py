@@ -10,6 +10,8 @@ class CleanerUtils(object):
 
     tla_regex = re.compile("([A-Z])\\w+ ([A-Z])\\w+ ([A-Z])\\w+ \\(([A-Z]{3})\\)")
     note_regex = re.compile(r"\n\s*\**\s*Note.*\Z")
+    key_compliance_notes_regex = re.compile(r"\*\*Key Compliance Notes\*\*.*\Z", re.DOTALL)
+    why_this_works_regex = re.compile(r"### \*\*Why This Works\*\*.*\Z", re.DOTALL)
 
     @classmethod
     def tla_fixer(cls, result: Optional[str]) -> Optional[str]:
@@ -31,7 +33,42 @@ class CleanerUtils(object):
         """Remove the last line note because we'll put similar content up earlier anyways"""
         if result is None:
             return None
-        return cls.note_regex.sub("", result)
+        result = cls.note_regex.sub("", result)
+        result = cls.key_compliance_notes_remover(result)
+        result = cls.why_this_works_remover(result)
+        return result
+
+    @classmethod
+    def key_compliance_notes_remover(cls, result: Optional[str]) -> Optional[str]:
+        """Remove anything after '**Key Compliance Notes**:'"""
+        if result is None:
+            return None
+        return cls.key_compliance_notes_regex.sub("", result)
+
+    @classmethod
+    def why_this_works_remover(cls, result: Optional[str]) -> Optional[str]:
+        """Remove anything after '### **Why This Works**'"""
+        if result is None:
+            return None
+        return cls.why_this_works_regex.sub("", result)
+
+    @classmethod
+    def reject_appeals_with_45_cfr(cls, result: Optional[str]) -> Optional[str]:
+        """Reject appeals mentioning '45 CFR §146.136' but not containing 'mental health'"""
+        if result is None:
+            return None
+        if '45 CFR §146.136' in result and 'mental health' not in result:
+            return None
+        return result
+
+    @classmethod
+    def reject_doctor_appeals_with_45_cfr(cls, result: Optional[str]) -> Optional[str]:
+        """Reject doctor appeals mentioning '45 CFR §146.136' but not containing 'mental health'"""
+        if result is None:
+            return None
+        if '45 CFR §146.136' in result and 'mental health' not in result:
+            return None
+        return result
 
     # Different swaps for different types of responses.
     swaps: dict[str, list[Tuple[str, str]]] = {
@@ -267,6 +304,9 @@ class CleanerUtils(object):
 
     @classmethod
     def cleanup_lt(cls, lt: str, data: Optional[str]) -> Optional[str]:
+        if "appeal" in lt:
+            data = cls.reject_appeals_with_45_cfr(data)
+            data = cls.reject_doctor_appeals_with_45_cfr(data)
         if data is None:
             return None
         # json handled seperately
@@ -308,7 +348,7 @@ class CleanerUtils(object):
         fixed_json = cls.json_missing_colon_pattern.sub(r' \1"\2": \3', json_string)
         return fixed_json
 
-    maybe_bad_url_endings = re.compile(r"^(.*)[\.\:\;\,\?\>]+$")
+    maybe_bad_url_endings = re.compile(r"^(.*)[\.\:\;\,\?\>\)\]]+$")
 
     # Some people return 200 when they should return 404
     common_bad_result_regex = re.compile(
