@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 import re
 from urllib import request as urllib_request
 import unicodedata
@@ -358,16 +358,20 @@ class CleanerUtils(object):
     url_re = re.compile(url_pattern, re.IGNORECASE)
 
     @classmethod
-    def url_fixer(cls, result: Optional[str]) -> Optional[str]:
+    def url_fixer(cls, result: Optional[str], input_urls: List[str] = None) -> Optional[str]:
         """LLMs like to hallucinate URLs drop them if they are not valid"""
         if result is None:
             return None
 
+        input_urls = input_urls or []
         urls = cls.url_re.findall(result)
         for u in urls:
             print(f"{u}")
+            # Skip validation for URLs that were in the input
+            if u in input_urls:
+                continue
             if not cls.is_valid_url(u):
-                print(f"Removing invalud url {u}")
+                print(f"Removing invalid url {u}")
                 result = result.replace(u, "")
         return result
 
