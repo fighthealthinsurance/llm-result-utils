@@ -384,11 +384,17 @@ class CleanerUtils(object):
             }
             request = urllib_request.Request(url, headers=headers)
             result = urllib_request.urlopen(request)
-            if ".pdf" not in url:
-                result_text = result.read().decode("utf-8").lower()
+            if "pdf" not in url:
+                try:
+                    result_text = result.read().decode("utf-8").lower()
+                except Exception as e:
+                    # Handle cases where the content cannot be decoded as utf-8
+                    print(f"Failed to decode content from {url}: {e} but it could be a PDF so we'll assume its valid")
+                    return True
                 if cls.common_bad_result_regex.match(result_text):
-                    raise Exception("Got a 200 but it sounds like we cant find it")
-                return True
+                    print("Got a 200 but it sounds like we cant find it")
+                    return False
+            return True
         except Exception as e:
             groups = cls.maybe_bad_url_endings.search(url)
             if groups is not None:
