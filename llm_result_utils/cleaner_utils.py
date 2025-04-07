@@ -358,7 +358,9 @@ class CleanerUtils(object):
     url_re = re.compile(url_pattern, re.IGNORECASE)
 
     @classmethod
-    def url_fixer(cls, result: Optional[str], input_urls: List[str] = None) -> Optional[str]:
+    def url_fixer(
+        cls, result: Optional[str], input_urls: List[str] = None
+    ) -> Optional[str]:
         """LLMs like to hallucinate URLs drop them if they are not valid"""
         if result is None:
             return None
@@ -389,7 +391,9 @@ class CleanerUtils(object):
                     result_text = result.read().decode("utf-8").lower()
                 except Exception as e:
                     # Handle cases where the content cannot be decoded as utf-8
-                    print(f"Failed to decode content from {url}: {e} but it could be a PDF so we'll assume its valid")
+                    print(
+                        f"Failed to decode content from {url}: {e} but it could be a PDF so we'll assume its valid"
+                    )
                     return True
                 if cls.common_bad_result_regex.match(result_text):
                     print("Got a 200 but it sounds like we cant find it")
