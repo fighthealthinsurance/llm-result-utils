@@ -122,6 +122,15 @@ class LLMResponseUtils(object):
 
         return True
 
+
+    @classmethod
+    def extract_answer(
+        cls, result: str
+    ) -> tuple[Optional[str], Optional[str]]:
+        reasoning, answer = cls.extract_reasoning_and_answer(result)
+        return answer
+
+
     @classmethod
     def extract_reasoning_and_answer(
         cls, result: str
