@@ -359,7 +359,7 @@ class CleanerUtils(object):
 
     @classmethod
     def url_fixer(
-        cls, result: Optional[str], input_urls: List[str] = None
+        cls, result: Optional[str], input_urls: Optional[List[str]] = None
     ) -> Optional[str]:
         """LLMs like to hallucinate URLs drop them if they are not valid"""
         if result is None:

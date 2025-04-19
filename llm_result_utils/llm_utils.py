@@ -126,7 +126,7 @@ class LLMResponseUtils(object):
     @classmethod
     def extract_answer(
         cls, result: str
-    ) -> tuple[Optional[str], Optional[str]]:
+    ) -> Optional[str]:
         reasoning, answer = cls.extract_reasoning_and_answer(result)
         return answer
 
@@ -143,7 +143,7 @@ class LLMResponseUtils(object):
             result: The full response text that may contain thinking tags
         """
         if not result:
-            return None, None
+            return (None, None)
 
         # Use regex to handle nested thinking tags properly
         # First try to find all top-level thinking/think tags
