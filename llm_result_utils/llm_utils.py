@@ -117,7 +117,7 @@ class LLMResponseUtils(object):
         last_closing_tag = max(last_thinking_close, last_think_close)
 
         # Check if there's meaningful text after the closing tag
-        if last_closing_tag == -1 or last_closing_tag + 10 >= len(result):
+        if last_closing_tag == -1 or last_closing_tag + 2 >= len(result):
             return False
 
         return True
