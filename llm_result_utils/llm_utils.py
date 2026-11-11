@@ -6,6 +6,9 @@ import chardet
 class LLMResponseUtils(object):
     tla_regex = re.compile("([A-Z])\\w+ ([A-Z])\\w+ ([A-Z])\\w+ \\(([A-Z]{3})\\)")
     note_regex = re.compile(r"\n\s*\**\s*Note.*\Z")
+    # The tags that close a reasoning block. Neither is part of the other
+    # ("</thinking>" has no "</think>" in it), so each is looked for by itself.
+    _CLOSING_THINKING_TAGS = ("</thinking>", "</think>")
 
     @classmethod
     def tla_fixer(cls, result: Optional[str]) -> Optional[str]:
@@ -122,14 +125,10 @@ class LLMResponseUtils(object):
 
         return True
 
-
     @classmethod
-    def extract_answer(
-        cls, result: str
-    ) -> Optional[str]:
+    def extract_answer(cls, result: str) -> Optional[str]:
         reasoning, answer = cls.extract_reasoning_and_answer(result)
         return answer
-
 
     @classmethod
     def extract_reasoning_and_answer(
@@ -144,45 +143,42 @@ class LLMResponseUtils(object):
         """
         if not result:
             return (None, None)
+        if not isinstance(result, str):
+            # What the regular expressions did with anything but a str.
+            raise TypeError(
+                f"expected string or bytes-like object, got {type(result).__name__!r}"
+            )
 
-        # Use regex to handle nested thinking tags properly
-        # First try to find all top-level thinking/think tags
-        thinking_pattern = re.compile(
-            r"(?:[^<]|<(?!/?thinking>)|(?:<thinking>.*?</thinking>))*.*</thinking>",
-            re.DOTALL,
+        # The answer is everything after the last closing tag of either kind,
+        # and the reasoning everything up to and including it, nested or not.
+        #
+        # This was found with two regular expressions ending in ".*</think>"
+        # and ".*</thinking>". Each could only match from the start of the
+        # text to its last closing tag, which is what rfind gives. But each
+        # was then tried again at every position after that tag, and at every
+        # position of the text when its tag was not there at all, failing in
+        # quadratic time each time: cubic in the length of the text, about
+        # half a minute for a 4,500-character letter.
+        last_position = max(
+            (
+                result.rfind(tag) + len(tag)
+                for tag in cls._CLOSING_THINKING_TAGS
+                if tag in result
+            ),
+            default=-1,
         )
-        think_pattern = re.compile(
-            r"(?:[^<]|<(?!/?think>)|(?:<think>.*?</think>))*.*</think>",
-            re.DOTALL,
-        )
-
-        # Find all matches
-        thinking_matches = thinking_pattern.findall(result)
-        think_matches = think_pattern.findall(result)
 
         reasoning: Optional[str] = None
         answer: Optional[str] = None
 
         # If no thinking tags were found, return the original text
-        if not thinking_matches and not think_matches:
+        if last_position == -1:
             print(f"No thinking match returning raw answer")
             answer = result
         else:
-            # Get the positions of all closing tags
-            thinking_end_positions = [
-                m.end() for m in thinking_pattern.finditer(result)
-            ]
-            think_end_positions = [m.end() for m in think_pattern.finditer(result)]
-
-            # Find the last closing tag position
-            all_positions = thinking_end_positions + think_end_positions
-            if not all_positions:
-                answer = result
-            else:
-                last_position = max(all_positions)
-                # Extract everything after the last closing tag
-                answer = result[last_position:].strip()
-                reasoning = result[:last_position].strip()
+            # Extract everything after the last closing tag
+            answer = result[last_position:].strip()
+            reasoning = result[:last_position].strip()
 
         # Remove any answer tags if present
         if answer:
