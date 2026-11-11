@@ -143,6 +143,11 @@ class LLMResponseUtils(object):
         """
         if not result:
             return (None, None)
+        if not isinstance(result, str):
+            # What the regular expressions did with anything but a str.
+            raise TypeError(
+                f"expected string or bytes-like object, got {type(result).__name__!r}"
+            )
 
         # The answer is everything after the last closing tag of either kind,
         # and the reasoning everything up to and including it, nested or not.

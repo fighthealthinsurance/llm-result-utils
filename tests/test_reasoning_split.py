@@ -96,10 +96,32 @@ def test_split(text, reasoning, answer):
     assert LLMResponseUtils.extract_answer(text) == answer
 
 
-@pytest.mark.parametrize("empty", [None, ""])
+@pytest.mark.parametrize("empty", [None, "", [], b"", 0])
 def test_nothing_in_nothing_out(empty):
     assert LLMResponseUtils.extract_reasoning_and_answer(empty) == (None, None)
+    assert reference(empty) == (None, None)
     assert LLMResponseUtils.extract_answer(empty) is None
+
+
+@pytest.mark.parametrize(
+    "not_text",
+    [
+        ["</think>"],
+        ["<think>a</think>b"],
+        {"</thinking>": 1},
+        ("a", "</think>"),
+        b"<think>a</think>b",
+        5,
+        itertools.count(),
+    ],
+)
+def test_anything_but_text_is_a_type_error(not_text, capsys):
+    """As with the regular expressions: no AttributeError, nothing printed, nothing iterated."""
+    with pytest.raises(TypeError):
+        reference(not_text)
+    with pytest.raises(TypeError):
+        LLMResponseUtils.extract_reasoning_and_answer(not_text)
+    assert capsys.readouterr().out == ""
 
 
 #: Whole tags, pieces of tags and ordinary text, to build every short reply from.
@@ -149,20 +171,26 @@ def test_agrees_with_the_regular_expressions_on_longer_replies():
 
 
 def test_a_long_letter_takes_no_time():
-    """The regular expressions took about 30 seconds on a 4,500-character answer."""
+    """The regular expressions took about 30 seconds on a 4,500-character answer.
+
+    5,000 characters first, so that this fails in under a minute, rather than
+    never finishing, if they come back. Then 200,000, which nothing worse than
+    linear does in the time.
+    """
     sentence = "The plan's own criteria list this as the next step after conservative therapy. "
-    letter = sentence * 2500  # about 200,000 characters
-    for tag in ("think", "thinking"):
-        text = f"<{tag}>\n- read the denial\n- answer it\n</{tag}>\n{letter}"
+    for size in (5_000, 200_000):
+        letter = (sentence * (size // len(sentence) + 1))[:size]
+        for tag in ("think", "thinking"):
+            text = f"<{tag}>\n- read the denial\n- answer it\n</{tag}>\n{letter}"
+            start = time.perf_counter()
+            reasoning, answer = LLMResponseUtils.extract_reasoning_and_answer(text)
+            assert time.perf_counter() - start < 2.0, size
+            assert reasoning == "- read the denial\n- answer it"
+            assert answer == letter.strip()
+        # And with no tags at all, which was quick before and still is.
         start = time.perf_counter()
-        reasoning, answer = LLMResponseUtils.extract_reasoning_and_answer(text)
-        assert time.perf_counter() - start < 2.0
-        assert reasoning == "- read the denial\n- answer it"
-        assert answer == letter.strip()
-    # And with no tags at all, which was quick before and still is.
-    start = time.perf_counter()
-    assert LLMResponseUtils.extract_reasoning_and_answer(letter) == (
-        None,
-        letter.strip(),
-    )
-    assert time.perf_counter() - start < 2.0
+        assert LLMResponseUtils.extract_reasoning_and_answer(letter) == (
+            None,
+            letter.strip(),
+        )
+        assert time.perf_counter() - start < 2.0, size
